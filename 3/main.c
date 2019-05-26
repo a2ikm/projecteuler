@@ -1,67 +1,52 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 
 typedef struct {
-  long *values;
+  long *data;
+  int capacity;
   int len;
-} Primes;
+} Vector;
 
-void primes_dump(Primes *primes) {
-  for (int i = 0; i < primes->len; i++) {
-    printf("  [%d] = %ld\n", i, primes->values[i]);
-  }
+Vector *vec_new(void) {
+  Vector *v = malloc(sizeof(Vector));
+  v->len = 0;
+  v->capacity = 16;
+  v->data = malloc(sizeof(long) * v->capacity);
+  return v;
 }
 
-void primes_prepare(Primes *primes, long target) {
-  long limit = ceil(sqrt(target));
-  long *flags = malloc((target + 1) * sizeof(long));
-  for (long i = 2; i <= target; i++) {
-    flags[i] = 1;
-  }
-  for (long i = 2; i <= limit; i++) {
-    if (flags[i]) {
-      for (long j = 2; i * j <= target; j++) {
-        flags[i * j] = 0;
-      }
-    }
-  }
-  for (long i = 2; i <= target; i++) {
-    if (flags[i]) {
-      primes->values[primes->len] = i;
-      primes->len++;
-    }
-  }
-  free(flags);
+void vec_free(Vector *v) {
+  free(v->data);
+  free(v);
 }
 
-void primes_free(Primes *primes) {
-  free(primes->values);
-  free(primes);
-}
-
-Primes *primes_new(long target) {
-  Primes *primes = malloc(sizeof(Primes));
-  primes->values = malloc(target * sizeof(long));
-  primes->len = 0;
-  primes_prepare(primes, target);
-  primes->values = realloc(primes->values, primes->len * sizeof(long));
-  return primes;
+void vec_push(Vector *v, long elm) {
+  if (v->len >= v->capacity) {
+    v->capacity *= 2;
+    v->data = realloc(v->data, sizeof(long) * v->capacity);
+  }
+  v->data[v->len++] = elm;
 }
 
 long solve(long target) {
-  Primes *primes = primes_new(target);
+  Vector *factors = vec_new();
 
-  for (int i = primes->len - 1; i >= 0; i--) {
-    long p = primes->values[i];
-    if (target % p == 0) {
-      primes_free(primes);
-      return p;
+  long x = target;
+  long i = 2;
+  while (x > 1) {
+    if (x % i == 0) {
+      vec_push(factors, i);
+      x = x / i;
+    } else {
+      i++;
     }
   }
 
-  primes_free(primes);
-  return 0;
+  if (factors->len == 0) {
+    return 0;
+  } else {
+    return factors->data[factors->len - 1];
+  }
 }
 
 int main(int argc, char **args) {
